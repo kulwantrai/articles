@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Articles on Agriculture Price Policy</title>
+</head>
+<body>
+    <h1>News Articles on Agriculture Price Policy</h1>
+    <button id="loadNewsButton">Load News</button>
+    <div id="articleCount"></div>
+    <div id="articles"></div>
+
+    <script>
+        const NEWS_API_KEY = 'b6bfc201b5624dfb88b1469813603a17';
+        const preferredSources = [
+            "Times of India", "Economic Times", "Hindustan Times", "The Hindu", 
+            "Indian Express", "Business Standard", "Livemint"
+        ];
+
+        async function fetchNews() {
+            const query = "agriculture price policy OR crop prices OR farm subsidies OR agricultural economics OR farm bill OR agricultural trade OR commodity prices OR farm income -shareholders -marketscreener -gasoline -energy";
+            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${NEWS_API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.articles;
+        }
+
+        function sortArticles(articles) {
+            // Convert publishedAt to Date for sorting
+            articles.forEach(article => {
+                article.publishedAt = new Date(article.publishedAt);
+            });
+
+            // Separate preferred and non-preferred articles
+            const preferredArticles = articles.filter(article => 
+                preferredSources.some(source => article.source.name.includes(source))
+            );
+            const nonPreferredArticles = articles.filter(article => 
+                !preferredSources.some(source => article.source.name.includes(source))
+            );
+
+            // Sort each group by date
+            preferredArticles.sort((a, b) => b.publishedAt - a.publishedAt);
+            nonPreferredArticles.sort((a, b) => b.publishedAt - a.publishedAt);
+
+            // Combine the sorted lists
+            return preferredArticles.concat(nonPreferredArticles);
+        }
+
+        function displayNews(articles) {
+            const articlesDiv = document.getElementById('articles');
+            const articleCountDiv = document.getElementById('articleCount');
+            articlesDiv.innerHTML = ''; // Clear any existing content
+            articleCountDiv.innerHTML = `Total articles for review: ${articles.length}\n`;
+
+            articles.forEach(article => {
+                const articleDiv = document.createElement('div');
+                articleDiv.innerHTML = `
+                    <h2>${article.title} (Published: ${article.publishedAt.toISOString().split('T')[0]})</h2>
+                    <p>${article.description || 'No description available'}</p>
+                    <a href="${article.url}" target="_blank">Read more</a>
+                    <hr>
+                `;
+                articlesDiv.appendChild(articleDiv);
+            });
+        }
+
+        async function loadNews() {
+            const articles = await fetchNews();
+            const sortedArticles = sortArticles(articles);
+            displayNews(sortedArticles);
+        }
+
+        // Add event listener to the button
+        document.getElementById('loadNewsButton').addEventListener('click', loadNews);
+    </script>
+</body>
+</html>
